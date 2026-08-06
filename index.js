@@ -28,8 +28,8 @@ client.on('messageCreate', async (message) => {
     if (!message.content || message.content.trim() === '') return;
 
     try {
-        // Fetch the last 20 messages for context
-        const fetchedMessages = await message.channel.messages.fetch({ limit: 20 });
+        // Fetch the last 6 messages for context (reduced to speed up analysis)
+        const fetchedMessages = await message.channel.messages.fetch({ limit: 6 });
         const contextMessages = Array.from(fetchedMessages.values())
             .filter(m => m.id !== message.id)
             .reverse()
@@ -41,28 +41,25 @@ client.on('messageCreate', async (message) => {
         // Define a comprehensive and strict system prompt for the AI
         const systemPrompt = `Tu es une IA de modération très stricte, experte en détection de contournement de censure. Ton rôle est de repérer les insultes, grossièretés, discours haineux et harcèlement.
 
-RÈGLES DE CENSURE STRICTES :
-Censure le message (OUI) s'il contient :
-1. Des insultes directes ou masquées (connard, salope, fdp, tg, ntm, kys).
-2. Des répétitions de lettres pour contourner le filtre (ex: slppppp, connnaaard, mmeeerde).
-3. Des abréviations, acronymes, verlan ou "slang" injurieux (ex: fdp, f.d.p, f d p).
-4. Des tentatives de contournement avec des symboles, chiffres ou polices personnalisées (ex: m*rde, s@lope, 𝕔0𝕟𝕟𝕒𝕣𝕕, 🅕🅓🅟, 𝖈𝖔𝖓𝖓𝖆𝖗𝖉).
-5. Des menaces implicites ou explicites, agressivité, intimidation (ex: "je vais te fumer", "je te v...", "je te ddb", "suicide toi").
-6. Des termes discriminatoires (racisme, homophobie, sexisme).
-7. De la vulgarité excessive ou des propos à caractère sexuel.
+RÈGLES DE CENSURE STRICTES (OUI) :
+1. Insultes directes ou masquées (connard, salope, fdp, tg, ntm, kys).
+2. Répétitions de lettres pour insulter (ex: slppppp, connnaaard).
+3. Abréviations, acronymes ou verlan injurieux (ex: fdp, f.d.p).
+4. Contournements avec symboles/chiffres/polices (ex: m*rde, 🅕🅓🅟).
+5. Menaces, agressivité (ex: "je vais te fumer", "suicide toi").
+6. Termes discriminatoires ou vulgarité sexuelle excessive.
 
-Même si le mot est déformé, incomplet, rallongé, écrit avec des polices spéciales (Unicode, mathématiques, Zalgo), ou traduit phonétiquement, si l'intention est injurieuse, tu DOIS le censurer. Transforme mentalement les caractères bizarres en lettres normales avant de juger.
-
-IMPORTANT SUR LE CONTEXTE :
-L'utilisateur te fournira le [CONTEXTE DE LA CONVERSATION] suivi du [MESSAGE À ANALYSER].
-Ne juge QUE le [MESSAGE À ANALYSER]. Sers-toi du contexte UNIQUEMENT pour comprendre s'il s'agit d'une blague (ex: des amis qui se taquinent amicalement), d'une discussion technique, ou d'une vraie insulte. Cela permet d'éviter les "faux positifs".
+RÈGLES D'EXEMPTION (FAUX POSITIFS -> NON) :
+1. NE CENSURE PAS le langage SMS inoffensif, les fautes de frappe ou les abréviations courantes (ex: "arrt" pour "arrête", "sa" pour "ça", "tfk" pour "tu fais quoi", "slt").
+2. NE CENSURE PAS les mots tronqués ou mal orthographiés s'ils n'ont AUCUNE intention injurieuse.
+3. NE CENSURE PAS les taquineries amicales si le [CONTEXTE] montre clairement que c'est de l'humour entre amis.
 
 ANALYSE ET FORMAT DE RÉPONSE OBLIGATOIRE :
-- Commence TOUJOURS par 1 à 3 phrases pour analyser l'intention (en utilisant le contexte si besoin), détecter le contournement et justifier ta décision.
+- Commence TOUJOURS par 1 à 2 phrases pour analyser l'intention (vérifie si c'est du SMS inoffensif comme "arrt" ou une vraie insulte).
 - Termine IMPÉRATIVEMENT par [DECISION: OUI] si le [MESSAGE À ANALYSER] doit être censuré.
-- Termine IMPÉRATIVEMENT par [DECISION: NON] s'il est propre ou s'il s'agit d'humour validé par le contexte.`;
+- Termine IMPÉRATIVEMENT par [DECISION: NON] s'il est propre ou inoffensif.`;
 
-        // Use Groq with Llama 3.1 Versatile to check for profanity
+        // Use Groq with Llama 3.3 Versatile to check for profanity
         const completion = await groq.chat.completions.create({
             messages: [
                 {
@@ -74,7 +71,7 @@ ANALYSE ET FORMAT DE RÉPONSE OBLIGATOIRE :
                     content: userPrompt
                 }
             ],
-            model: "llama-3.1-70b-versatile",
+            model: "llama-3.3-70b-versatile",
             temperature: 0,
             max_tokens: 200,
         });
