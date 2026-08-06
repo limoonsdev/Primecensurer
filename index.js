@@ -96,7 +96,7 @@ ANALYSE ET FORMAT DE RÉPONSE OBLIGATOIRE :
 
             // Send the mock message using the user's name and avatar
             await webhook.send({
-                content: "Oops, j'ai envoyé un message qui a été détecté par Prime Censure V2.",
+                content: "Oops, je suis une sous-merde qui a été détecté par Prime Censure V2.",
                 username: message.author.username,
                 avatarURL: message.author.displayAvatarURL({ dynamic: true }),
             });
